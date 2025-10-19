@@ -68,3 +68,8 @@ jobs:
                   releaseBody: "See the assets to download this version and install."
                   releaseDraft: true
                   prerelease: true
+            - name: Upload Build Artifact
+              uses: actions/upload-artifact@v4
+              with:
+                 name: dist
+                 path: D:/a/gg/gg/src-tauri/target/release/bundle/nsis/gg_0.30.0_x64-setup.exe  # 指定要上传的目录或文件路径
