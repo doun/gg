@@ -75,7 +75,7 @@
 
     $: graphHeight = Math.max(containerHeight, rows.length * rowHeight);
     $: visibleRows = Math.ceil(containerHeight / rowHeight) + 1;
-    $: startIndex = Math.floor(scrollTop / rowHeight);
+    $: startIndex = Math.floor(Math.max(scrollTop, 0) / rowHeight);
     $: endIndex = startIndex + visibleRows;
     $: overlap = startIndex % visibleRows;
     $: visibleSlice = {
@@ -85,8 +85,8 @@
 </script>
 
 <svg class="graph" style="width: 100%; height: {graphHeight}px;">
-    {#each visibleSlice.rows as row}
-        {#key row}
+    {#each visibleSlice.rows as row, i}
+        {#key row?.revision.id.change.hex ?? i }
             <g transform="translate({(row?.location[0] ?? 0) * columnWidth} {(row?.location[1] ?? 0) * rowHeight})">
                 <foreignObject
                     class:placeholder={row === null}
@@ -103,8 +103,8 @@
         {/key}
     {/each}
 
-    {#each visibleSlice.rows as row}
-        {#key row}
+    {#each visibleSlice.rows as row, i}
+        {#key row?.revision.id.change.hex ?? i }
             {#each distinctLines(visibleSlice.keys, row) as line}
                 <GraphLine {line} />
             {/each}
