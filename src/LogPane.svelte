@@ -60,7 +60,7 @@
 
     $: if (entered_query) choices = getChoices();
     $: if ($repoStatusEvent) reloadLog();
-    
+
     // Update revset input when currentRevisionSet changes (with proper timing)
     $: if ($currentRevisionSet && !isUserEditing) {
         console.log("currentRevisionSet reactive change, size:", $currentRevisionSet.size);
@@ -71,12 +71,12 @@
             }
         }, 0);
     }
-    
+
     // Update currentRevisionSet when revset input changes
     async function updateRevisionSet(event?: CustomEvent) {
         const queryValue = event?.detail?.revsetValue || revsetValue;
         console.error("updateRevisionSet() called with: '" + queryValue + "'");
-        
+
         if (queryValue.trim() === "") {
             currentRevisionSet.set(new Set());
             currentRevisionSetHex.set(new Set());
@@ -84,7 +84,7 @@
         }
 
         console.error("updateRevisionSet() called with nonempty: '" + queryValue + "'");
-        
+
         try {
             let page = await query<LogPage>(
                 "query_log",
@@ -98,7 +98,7 @@
                 currentRevisionSet.set(newSet);
                 currentRevisionSetHex.set(new Set([...newSet].map(c => c.hex)));
             }
-            
+
             // Update the input binding to match the query value
             if (event?.detail?.revsetValue) {
                 revsetValue = event.detail.revsetValue;
@@ -107,7 +107,7 @@
             console.error("Error updating revision set:", error);
         }
     }
-    
+
     // Handle Enter key without losing focus
     function handleKeydown(e: KeyboardEvent) {
         if (e.key === 'Enter') {
@@ -116,7 +116,7 @@
             updateRevisionSet();
         }
     }
-    
+
     // Handle blur (when clicking away)
     function handleBlur() {
         isUserEditing = false;
@@ -229,7 +229,7 @@
     }
 </script>
 
-<Pane>
+<Pane bClass="log-body" class="log-container">
     <div slot="header" class="log-selector">
         <SelectWidget options={choices} bind:value={entered_query} on:change={reloadLog}>
             <svelte:fragment let:option>{option.label}</svelte:fragment>
@@ -266,9 +266,9 @@
 
     <div slot="footer" class="log-revset">
         <label for="revset">Revset:</label>
-        <input 
-            type="text" 
-            id="revset" 
+        <input
+            type="text"
+            id="revset"
             bind:value={revsetValue}
             on:focus={() => isUserEditing = true}
             on:blur={handleBlur}

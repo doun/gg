@@ -14,7 +14,7 @@
     import RefMutator from "./mutators/RefMutator";
     import ChangeMutator from "./mutators/ChangeMutator";
     import RevisionMutator from "./mutators/RevisionMutator";
-    import Pane from "./shell/Pane.svelte";
+    import AppPane from "./shell/Pane.svelte";
     import RevisionPane from "./RevisionPane.svelte";
     import LogPane from "./LogPane.svelte";
     import BoundQuery from "./controls/BoundQuery.svelte";
@@ -29,6 +29,7 @@
     import type { InputRequest } from "./messages/InputRequest";
     import type { InputResponse } from "./messages/InputResponse";
     import type Settings from "./shell/Settings";
+    import { Splitpanes, Pane } from "svelte-splitpanes";
 
     let selection: Query<RevResult> = {
         type: "wait",
@@ -43,7 +44,7 @@
         }
     });
 
-    document.body.addEventListener("click", () => currentContext.set(null), true);
+    // document.body.addEventListener("click", () => currentContext.set(null), true);
 
     // this is a special case - most triggers are fire-and-forget, but we really need a
     // gg://repo/config event in response to this one. if it takes too long, we make our own
@@ -93,11 +94,7 @@
     async function loadChange(id: RevId) {
         let rev = await query<RevResult>("query_revision", { id }, (q) => (selection = q));
 
-        if (
-            rev.type == "data" &&
-            rev.value.type == "NotFound" &&
-            id.commit.hex != $repoStatusEvent?.working_copy.hex
-        ) {
+        if (rev.type == "data" && rev.value.type == "NotFound" && id.commit.hex != $repoStatusEvent?.working_copy.hex) {
             return loadChange({
                 change: { type: "ChangeId", hex: "@", prefix: "@", rest: "" },
                 commit: $repoStatusEvent!.working_copy,
@@ -144,76 +141,83 @@
 </script>
 
 <Zone operand={{ type: "Repository" }} alwaysTarget let:target>
-    <div
-        id="shell"
-        class={$repoConfigEvent?.type == "Workspace" ? $repoConfigEvent.theme_override : ""}>
-        {#if $repoConfigEvent.type == "Initial"}
+    <div id="shell" class={$repoConfigEvent?.type == "Workspace" ? $repoConfigEvent.theme_override : ""}>
+        <Splitpanes horizontal={true} class="default-theme">
+            {#if $repoConfigEvent.type == "Initial"}
+                <Pane>
+                    <AppPane>
+                        <h2 slot="header">Loading...</h2>
+                    </AppPane>
+                </Pane>
+            {:else if $repoConfigEvent.type == "Workspace"}
+                <Pane size={95} minSize={50} maxSize={100}>
+                    <Splitpanes horizontal={false} class="default-theme">
+                        <Pane class="container" minSize={30}>
+                            {#key $repoConfigEvent.absolute_path}
+                                <LogPane
+                                    default_query={$repoConfigEvent.default_query}
+                                    latest_query={$repoConfigEvent.latest_query} />
+                            {/key}
+                        </Pane>
+                        <Pane class="container" minSize={10}>
+                            <BoundQuery query={selection} let:data>
+                                {#if data.type == "Detail"}
+                                    <RevisionPane rev={data} />
+                                {:else}
+                                    <AppPane>
+                                        <h2 slot="header">Not Found</h2>
+                                        <p slot="body">
+                                            Revision <IdSpan id={data.id.change} />|<IdSpan id={data.id.commit} /> does not
+                                            exist.
+                                        </p>
+                                    </AppPane>
+                                {/if}
+                                <AppPane slot="error" let:message>
+                                    <h2 slot="header">Error</h2>
+                                    <p slot="body">{message}</p>
+                                </AppPane>
+                                <AppPane slot="wait">
+                                    <h2 slot="header">Loading...</h2>
+                                </AppPane>
+                            </BoundQuery>
+                        </Pane>
+                    </Splitpanes>
+                </Pane>
+            {:else if $repoConfigEvent.type == "LoadError"}
+                <Pane>
+                    <ModalOverlay>
+                        <ErrorDialog title="No Workspace Loaded">
+                            <p>{$repoConfigEvent.message}.</p>
+                            <p>Try opening a workspace from the Repository menu.</p>
+                            <RecentWorkspaces workspaces={recentWorkspaces} />
+                        </ErrorDialog>
+                    </ModalOverlay>
+                </Pane>
+            {:else if $repoConfigEvent.type == "TimeoutError"}
+                <Pane>
+                    <ModalOverlay>
+                        <ErrorDialog title="No Workspace Loaded" severe>
+                            <p>Error communicating with backend: the operation is taking too long.</p>
+                            <p>You may need to restart GG to continue.</p>
+                            <RecentWorkspaces workspaces={recentWorkspaces} />
+                        </ErrorDialog>
+                    </ModalOverlay>
+                </Pane>
+            {:else}
+                <Pane>
+                    <ModalOverlay>
+                        <ErrorDialog title="Fatal Error" severe>
+                            <p>Error communicating with backend: {$repoConfigEvent.message}.</p>
+                            <p>You may need to restart GG to continue.</p>
+                            <RecentWorkspaces workspaces={recentWorkspaces} />
+                        </ErrorDialog>
+                    </ModalOverlay>
+                </Pane>
+            {/if}
             <Pane>
-                <h2 slot="header">Loading...</h2>
+                <StatusBar {target} />
             </Pane>
-
-            <div class="separator" />
-
-            <Pane />
-        {:else if $repoConfigEvent.type == "Workspace"}
-            {#key $repoConfigEvent.absolute_path}
-                <LogPane
-                    default_query={$repoConfigEvent.default_query}
-                    latest_query={$repoConfigEvent.latest_query} />
-            {/key}
-
-            <div class="separator" />
-
-            <BoundQuery query={selection} let:data>
-                {#if data.type == "Detail"}
-                    <RevisionPane rev={data} />
-                {:else}
-                    <Pane>
-                        <h2 slot="header">Not Found</h2>
-                        <p slot="body">
-                            Revision <IdSpan id={data.id.change} />|<IdSpan id={data.id.commit} /> does
-                            not exist.
-                        </p>
-                    </Pane>
-                {/if}
-                <Pane slot="error" let:message>
-                    <h2 slot="header">Error</h2>
-                    <p slot="body">{message}</p>
-                </Pane>
-                <Pane slot="wait">
-                    <h2 slot="header">Loading...</h2>
-                </Pane>
-            </BoundQuery>
-        {:else if $repoConfigEvent.type == "LoadError"}
-            <ModalOverlay>
-                <ErrorDialog title="No Workspace Loaded">
-                    <p>{$repoConfigEvent.message}.</p>
-                    <p>Try opening a workspace from the Repository menu.</p>
-                    <RecentWorkspaces workspaces={recentWorkspaces} />
-                </ErrorDialog>
-            </ModalOverlay>
-        {:else if $repoConfigEvent.type == "TimeoutError"}
-            <ModalOverlay>
-                <ErrorDialog title="No Workspace Loaded" severe>
-                    <p>Error communicating with backend: the operation is taking too long.</p>
-                    <p>You may need to restart GG to continue.</p>
-                    <RecentWorkspaces workspaces={recentWorkspaces} />
-                </ErrorDialog>
-            </ModalOverlay>
-        {:else}
-            <ModalOverlay>
-                <ErrorDialog title="Fatal Error" severe>
-                    <p>Error communicating with backend: {$repoConfigEvent.message}.</p>
-                    <p>You may need to restart GG to continue.</p>
-                    <RecentWorkspaces workspaces={recentWorkspaces} />
-                </ErrorDialog>
-            </ModalOverlay>
-        {/if}
-
-        <div class="separator" style="grid-area: 2/1/3/4" />
-
-        <StatusBar {target} />
-
+        </Splitpanes>
         {#if $currentInput}
             <ModalOverlay>
                 <InputDialog
@@ -225,10 +229,7 @@
         {:else if $currentMutation}
             <ModalOverlay>
                 {#if $currentMutation.type == "data" && ($currentMutation.value.type == "InternalError" || $currentMutation.value.type == "PreconditionError")}
-                    <ErrorDialog
-                        title="Command Error"
-                        onClose={() => ($currentMutation = null)}
-                        severe>
+                    <ErrorDialog title="Command Error" onClose={() => ($currentMutation = null)} severe>
                         {#if $currentMutation.value.type == "InternalError"}
                             <p>
                                 {#each $currentMutation.value.message.lines as line}
@@ -250,20 +251,30 @@
 </Zone>
 
 <style>
+    :global(.log-body) {
+        display: block !important;
+        overflow-y: scroll !important;
+        background: var(--ctp-crust);
+    }
+    :global(.log-container) {
+        height: 94vh;
+        background: var(--ctp-crust);
+    }
     #shell {
         width: 100vw;
         height: 100vh;
 
-        display: grid;
+        background: var(--ctp-crust);
+        color: var(--ctp-text);
+        /*        display: grid;
         grid-template-columns: 1fr 3px 1fr;
         grid-template-rows: 1fr 3px 30px;
         grid-template-areas:
             "content content content"
             ". . ."
-            "footer footer footer";
+            "footer footer footer";*/
 
         background: var(--ctp-crust);
-        color: var(--ctp-text);
 
         user-select: none;
     }

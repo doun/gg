@@ -36,7 +36,7 @@
             scrollTop = box.scrollTop;
         }
 
-        pollFrame = requestAnimationFrame(pollScroll);
+        // pollFrame = requestAnimationFrame(pollScroll);
     }
 
     function onKeyDown(event: KeyboardEvent) {

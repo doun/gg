@@ -1,12 +1,15 @@
 <script lang="ts">
     import { hasModal } from "../stores";
+    export let bClass: string = "";
+    let clazz: string = "";
+    export {clazz as class}
 </script>
 
-<section inert={$hasModal}>
+<section inert={$hasModal} class={clazz}>
     <div class="header">
         <slot name="header" />
     </div>
-    <div class="body">
+    <div class={"body " + bClass }>
         <slot name="body" />
     </div>
     <div class="footer">
