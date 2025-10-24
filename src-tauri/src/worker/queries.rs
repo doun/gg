@@ -7,26 +7,17 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
+use jj_lib::merge::SameChange;
+use jj_lib::files::FileMergeHunkLevel;
 
 use futures_util::{StreamExt, try_join};
 use gix::bstr::ByteVec;
 use itertools::Itertools;
 use jj_cli::diff_util::{LineCompareMode, LineDiffOptions};
 use jj_lib::{
-    backend::CommitId,
-    conflicts::{self, ConflictMaterializeOptions, MaterializedFileValue, MaterializedTreeValue},
-    diff::{
-        CompareBytesExactly, CompareBytesIgnoreAllWhitespace, CompareBytesIgnoreWhitespaceAmount,
-        Diff, DiffHunk, DiffHunkKind, find_line_ranges,
-    },
-    graph::{GraphEdgeType, GraphNode, TopoGroupedGraphIterator},
-    matchers::EverythingMatcher,
-    merged_tree::{TreeDiffEntry, TreeDiffStream},
-    ref_name::{RefNameBuf, RemoteNameBuf, RemoteRefSymbol},
-    repo::Repo,
-    repo_path::RepoPath,
-    revset::{Revset, RevsetEvaluationError},
-    rewrite,
+    backend::CommitId, conflicts::{self, ConflictMaterializeOptions, MaterializedFileValue, MaterializedTreeValue}, diff::{
+        find_line_ranges, CompareBytesExactly, CompareBytesIgnoreAllWhitespace, CompareBytesIgnoreWhitespaceAmount, DiffHunk, DiffHunkKind
+    }, graph::{GraphEdgeType, GraphNode, TopoGroupedGraphIterator}, matchers::EverythingMatcher, merge::SameChange, merged_tree::{TreeDiffEntry, TreeDiffStream}, ref_name::{RefNameBuf, RemoteNameBuf, RemoteRefSymbol}, repo::Repo, repo_path::RepoPath, revset::{Revset, RevsetEvaluationError}, rewrite, tree_merge::MergeOptions
 };
 use pollster::FutureExt;
 use pollster::block_on;
@@ -313,10 +304,18 @@ pub fn query_revision(ws: &WorkspaceSession, id: RevId) -> Result<RevResult> {
                 {
                     MaterializedTreeValue::FileConflict(file) => {
                         let mut hunk_content = vec![];
+                        let options = &ConflictMaterializeOptions {
+                            marker_style: ConflictMarkerStyle::Diff,
+                            marker_len: None,
+                            merge: MergeOptions {
+                                hunk_level: FileMergeHunkLevel::Line,
+                                same_change: SameChange::Accept,
+                            },
+                        };
                         conflicts::materialize_merge_result(
                             &file.contents,
                             &mut hunk_content,
-                            &ConflictMaterializeOptions::default(),
+                            options,
                         )?;
                         let mut hunks = get_unified_hunks(3, &hunk_content, &[])?;
                         if let Some(hunk) = hunks.pop() {
@@ -475,10 +474,18 @@ fn get_value_contents(path: &RepoPath, value: MaterializedTreeValue) -> Result<V
         MaterializedTreeValue::GitSubmodule(_) => Ok("(submodule)".to_owned().into_bytes()),
         MaterializedTreeValue::FileConflict(file) => {
             let mut hunk_content = vec![];
+            let options = &ConflictMaterializeOptions {
+                            marker_style: ConflictMarkerStyle::Diff,
+                            marker_len: None,
+                            merge: MergeOptions {
+                                hunk_level: FileMergeHunkLevel::Line,
+                                same_change: SameChange::Accept,
+                            },
+                        };
             conflicts::materialize_merge_result(
                 &file.contents,
                 &mut hunk_content,
-                &ConflictMaterializeOptions::default(),
+                options,
             )?;
             Ok(hunk_content)
         }

@@ -128,7 +128,7 @@ impl WorkerSession {
         let index = index_store
             .get_index_at_op(operation.repo.operation(), workspace.repo_loader().store())?;
         let is_large =
-            if let Some(default_index) = index.as_any().downcast_ref::<DefaultReadonlyIndex>() {
+            if let Some(default_index) = index.downcast_ref::<DefaultReadonlyIndex>() {
                 let stats = default_index.stats();
                 stats.num_commits as i64 >= data.settings.query_large_repo_heuristic()
             } else {
@@ -194,8 +194,8 @@ impl WorkspaceSession<'_> {
 
     pub fn evaluate_revset_expr<'op>(
         &'op self,
-        revset_expr: Rc<UserRevsetExpression>,
-    ) -> Result<Box<dyn Revset + 'op>, RevsetError> {
+        revset_expr: Arc<ResolvedRevsetExpression>, RevsetResolutionError>,
+    ) ->Result<Arc<ResolvedRevsetExpression>, RevsetResolutionError> {
         let resolved_expression =
             revset_expr.resolve_user_expression(self.operation.repo.as_ref(), &self.resolver())?;
         let revset = resolved_expression.evaluate(self.operation.repo.as_ref())?;
@@ -687,7 +687,7 @@ impl WorkspaceSession<'_> {
         }
         let (new_tree_id, _) = locked_ws.locked_wc().snapshot(&SnapshotOptions {
             base_ignores,
-            fsmonitor_settings: self.data.settings.fsmonitor_settings()?,
+            // fsmonitor_settings: self.data.settings.fsmonitor_settings()?,
             progress: None,
             max_new_file_size,
             start_tracking_matcher: &EverythingMatcher,
@@ -932,7 +932,7 @@ impl SessionOperation {
     }
 
     fn git_backend(&self) -> Option<&GitBackend> {
-        self.repo.store().backend_impl().downcast_ref()
+        self.repo.store().backend_impl()
     }
 
     // XXX out of snyc with jj-cli version
@@ -984,7 +984,7 @@ fn find_workspace_dir(cwd: &Path) -> &Path {
 fn parse_revset(
     parse_context: &RevsetParseContext,
     revision: &str,
-) -> Result<Rc<UserRevsetExpression>, RevsetError> {
+) -> Result<Arc<RevsetExpression<...>>> {
     let mut diagnostics = RevsetDiagnostics::new(); // XXX move this up and include it in errors
     let expression =
         revset::parse(&mut diagnostics, revision, parse_context).context("parse revset")?;
@@ -1067,7 +1067,7 @@ fn build_ref_index(repo: &ReadonlyRepo) -> RefIndex {
         }
     }
 
-    for (tag_name, tag_target) in repo.view().tags() {
+    for (tag_name, tag_target) in repo.view().local_tags() {
         index.insert(
             tag_target.added_ids(),
             messages::StoreRef::Tag {

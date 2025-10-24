@@ -737,13 +737,13 @@ impl Mutation for CreateRef {
             }
             StoreRef::Tag { tag_name, .. } => {
                 let tag_name_ref = RefNameBuf::from(tag_name);
-                let existing_tag = ws.view().get_tag(&tag_name_ref);
+                let existing_tag = ws.view().get_local_tag(&tag_name_ref);
                 if existing_tag.is_present() {
                     precondition!("{} already exists", tag_name_ref.as_str());
                 }
 
                 tx.repo_mut()
-                    .set_tag_target(&tag_name_ref, RefTarget::normal(commit.id().clone()));
+                    .set_local_tag_target(&tag_name_ref, RefTarget::normal(commit.id().clone()));
 
                 match ws.finish_transaction(
                     tx,
@@ -815,7 +815,7 @@ impl Mutation for DeleteRef {
                 let mut tx = ws.start_transaction()?;
 
                 tx.repo_mut()
-                    .set_tag_target(&tag_name_ref, RefTarget::absent());
+                    .set_local_tag_target(&tag_name_ref, RefTarget::absent());
 
                 match ws.finish_transaction(tx, format!("forget tag {}", tag_name_ref.as_str()))? {
                     Some(new_status) => Ok(MutationResult::Updated { new_status }),
@@ -867,13 +867,13 @@ impl Mutation for MoveRef {
             }
             StoreRef::Tag { tag_name } => {
                 let tag_name_ref = RefNameBuf::from(tag_name);
-                let old_target = ws.view().get_tag(&tag_name_ref);
+                let old_target = ws.view().get_local_tag(&tag_name_ref);
                 if old_target.is_absent() {
                     precondition!("No such tag: {:?}", tag_name_ref.as_str());
                 }
 
                 tx.repo_mut()
-                    .set_tag_target(&tag_name_ref, RefTarget::normal(commit.id().clone()));
+                    .set_local_tag_target(&tag_name_ref, RefTarget::normal(commit.id().clone()));
 
                 match ws.finish_transaction(
                     tx,
