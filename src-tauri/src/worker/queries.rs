@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
-use jj_lib::merge::SameChange;
+use jj_lib::{diff::ContentDiff, merge::SameChange};
 use jj_lib::files::FileMergeHunkLevel;
 
 use futures_util::{StreamExt, try_join};
@@ -736,20 +736,20 @@ where
 fn diff_by_line<'input, T: AsRef<[u8]> + ?Sized + 'input>(
     inputs: impl IntoIterator<Item = &'input T>,
     options: &LineDiffOptions,
-) -> Diff<'input> {
+) -> ContentDiff<'input> {
     // TODO: If we add --ignore-blank-lines, its tokenizer will have to attach
     // blank lines to the preceding range. Maybe it can also be implemented as a
     // post-process (similar to refine_changed_regions()) that expands unchanged
     // regions across blank lines.
     match options.compare_mode {
         LineCompareMode::Exact => {
-            Diff::for_tokenizer(inputs, find_line_ranges, CompareBytesExactly)
+            ContentDiff::for_tokenizer(inputs, find_line_ranges, CompareBytesExactly)
         }
         LineCompareMode::IgnoreAllSpace => {
-            Diff::for_tokenizer(inputs, find_line_ranges, CompareBytesIgnoreAllWhitespace)
+            ContentDiff::for_tokenizer(inputs, find_line_ranges, CompareBytesIgnoreAllWhitespace)
         }
         LineCompareMode::IgnoreSpaceChange => {
-            Diff::for_tokenizer(inputs, find_line_ranges, CompareBytesIgnoreWhitespaceAmount)
+            ContentDiff::for_tokenizer(inputs, find_line_ranges, CompareBytesIgnoreWhitespaceAmount)
         }
     }
 }
