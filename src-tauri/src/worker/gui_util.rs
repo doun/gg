@@ -4,10 +4,10 @@
 use {
     super::WorkerSession,
     crate::{
-        config::{GGSettings, read_config},
+        config::{read_config, GGSettings},
         messages::{self, RevId},
     },
-    anyhow::{Context, Result, anyhow},
+    anyhow::{anyhow, Context, Result, Error},
     chrono::TimeZone,
     git2::Repository,
     itertools::Itertools,
@@ -28,10 +28,7 @@ use {
         repo::{ReadonlyRepo, Repo, RepoLoaderError, StoreFactories},
         repo_path::{RepoPath, RepoPathUiConverter},
         revset::{
-            self, Revset, RevsetAliasesMap, RevsetDiagnostics, RevsetEvaluationError,
-            RevsetExpression, RevsetExtensions, RevsetIteratorExt, RevsetParseContext,
-            RevsetResolutionError, RevsetWorkspaceContext, SymbolResolver, SymbolResolverExtension,
-            UserRevsetExpression,
+            self, Revset, RevsetAliasesMap, RevsetDiagnostics, RevsetEvaluationError, RevsetExpression, RevsetExtensions, RevsetIteratorExt, RevsetParseContext,  RevsetResolutionError, RevsetWorkspaceContext, SymbolResolver, SymbolResolverExtension, UserRevsetExpression
         },
         rewrite::{self, RebaseOptions, RebasedCommit},
         settings::{HumanByteSize, UserSettings},
@@ -194,8 +191,8 @@ impl WorkspaceSession<'_> {
 
     pub fn evaluate_revset_expr<'op>(
         &'op self,
-        revset_expr: Arc<ResolvedRevsetExpression>, RevsetResolutionError>,
-    ) ->Result<Arc<ResolvedRevsetExpression>, RevsetResolutionError> {
+        revset_expr: Arc<UserRevsetExpression>,
+    ) ->Result<Box<dyn Revset + 'op>, RevsetError> {
         let resolved_expression =
             revset_expr.resolve_user_expression(self.operation.repo.as_ref(), &self.resolver())?;
         let revset = resolved_expression.evaluate(self.operation.repo.as_ref())?;
@@ -280,7 +277,7 @@ impl WorkspaceSession<'_> {
             Err(RevsetError::Resolution(RevsetResolutionError::NoSuchRevision { .. })) => {
                 return Ok(None);
             }
-            Err(err) => return Err(err),
+            Err(err) => return Err(err.into()),
         };
 
         let mut change_iter = change_revset
@@ -984,7 +981,7 @@ fn find_workspace_dir(cwd: &Path) -> &Path {
 fn parse_revset(
     parse_context: &RevsetParseContext,
     revision: &str,
-) -> Result<Arc<RevsetExpression<...>>> {
+) -> Result<Arc<UserRevsetExpression>, Error> {
     let mut diagnostics = RevsetDiagnostics::new(); // XXX move this up and include it in errors
     let expression =
         revset::parse(&mut diagnostics, revision, parse_context).context("parse revset")?;

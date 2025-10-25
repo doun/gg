@@ -22,7 +22,7 @@
         "modern-normalize": "^3.0.1"
     },
     "devDependencies": {
-        "@sveltejs/vite-plugin-svelte": "^5.0.2",
+        "@sveltejs/vite-plugin-svelte": "^4.0.0",
         "@tauri-apps/cli": "^2.8.4",
         "@tsconfig/svelte": "^5.0.2",
         "svelte": "^5.41.0",

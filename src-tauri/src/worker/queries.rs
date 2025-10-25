@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{Result, anyhow};
-use jj_lib::{diff::ContentDiff, merge::SameChange};
+use jj_lib::{conflicts::ConflictMarkerStyle, diff::ContentDiff, merge::SameChange};
 use jj_lib::files::FileMergeHunkLevel;
 
 use futures_util::{StreamExt, try_join};
@@ -17,7 +17,7 @@ use jj_cli::diff_util::{LineCompareMode, LineDiffOptions};
 use jj_lib::{
     backend::CommitId, conflicts::{self, ConflictMaterializeOptions, MaterializedFileValue, MaterializedTreeValue}, diff::{
         find_line_ranges, CompareBytesExactly, CompareBytesIgnoreAllWhitespace, CompareBytesIgnoreWhitespaceAmount, DiffHunk, DiffHunkKind
-    }, graph::{GraphEdgeType, GraphNode, TopoGroupedGraphIterator}, matchers::EverythingMatcher, merge::SameChange, merged_tree::{TreeDiffEntry, TreeDiffStream}, ref_name::{RefNameBuf, RemoteNameBuf, RemoteRefSymbol}, repo::Repo, repo_path::RepoPath, revset::{Revset, RevsetEvaluationError}, rewrite, tree_merge::MergeOptions
+    }, graph::{GraphEdgeType, GraphNode, TopoGroupedGraphIterator}, matchers::EverythingMatcher, merged_tree::{TreeDiffEntry, TreeDiffStream}, ref_name::{RefNameBuf, RemoteNameBuf, RemoteRefSymbol}, repo::Repo, repo_path::RepoPath, revset::{Revset, RevsetEvaluationError}, rewrite, tree_merge::MergeOptions
 };
 use pollster::FutureExt;
 use pollster::block_on;
@@ -406,20 +406,20 @@ async fn format_tree_changes(
     let store = ws.repo().store();
 
     while let Some(TreeDiffEntry { path, values }) = tree_diff.next().await {
-        let (before, after) = values?;
+        let obj = values?;
 
-        let kind = if before.is_present() && after.is_present() {
+        let kind = if obj.before.is_present() && obj.after.is_present() {
             ChangeKind::Modified
-        } else if before.is_absent() {
+        } else if obj.before.is_absent() {
             ChangeKind::Added
         } else {
             ChangeKind::Deleted
         };
 
-        let has_conflict = !after.is_resolved();
+        let has_conflict = !obj.after.is_resolved();
 
-        let before_future = conflicts::materialize_tree_value(store, &path, before);
-        let after_future = conflicts::materialize_tree_value(store, &path, after);
+        let before_future = conflicts::materialize_tree_value(store, &path, obj.before);
+        let after_future = conflicts::materialize_tree_value(store, &path, obj.after);
         let (before_value, after_value) = try_join!(before_future, after_future)?;
 
         let hunks = get_value_hunks(3, &path, before_value, after_value)?;
@@ -664,7 +664,7 @@ fn unified_diff_hunks<'content>(
             }
             DiffHunkKind::Different => {
                 let (left_lines, right_lines) =
-                    unzip_diff_hunks_to_lines(Diff::by_word(hunk.contents).hunks());
+                    unzip_diff_hunks_to_lines(ContentDiff::by_word(hunk.contents).hunks());
                 current_hunk.extend_removed_lines(left_lines);
                 current_hunk.extend_added_lines(right_lines);
             }
