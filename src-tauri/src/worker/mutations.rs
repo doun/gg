@@ -1,14 +1,17 @@
 use std::fmt::Display;
 use std::sync::Arc;
+use std::process;
 
 use anyhow::{Context, Result, anyhow};
 use indexmap::IndexMap;
 use itertools::Itertools;
+use jj_cli::cli_util::CommandHelper;
 use jj_lib::backend::{CopyId, FileId, MergedTreeId, TreeValue};
 use jj_lib::git::expand_fetch_refspecs;
 use jj_lib::merge::Merge;
 use jj_lib::merged_tree::{MergedTree, MergedTreeBuilder};
 use jj_lib::ref_name::{RefNameBuf, RemoteName, RemoteNameBuf, RemoteRefSymbol};
+use jj_lib::rewrite::find_duplicate_divergent_commits;
 use jj_lib::{
     backend::{BackendError, CommitId},
     commit::Commit,
@@ -30,10 +33,7 @@ use pollster::block_on;
 use tokio::io::AsyncReadExt as _;
 
 use crate::messages::{
-    AbandonRevisions, BackoutRevisions, CheckoutRevision, CopyChanges, CreateRef, CreateRevision,
-    CreateRevisionBetween, DeleteRef, DescribeRevision, DuplicateRevisions, GitFetch, GitPush,
-    InsertRevision, MoveChanges, MoveHunk, MoveRef, MoveRevision, MoveSource, MutationResult,
-    RenameBranch, StoreRef, TrackBranch, TreePath, UndoOperation, UntrackBranch,
+    AbandonRevisions, BackoutRevisions, CheckoutRevision, CopyChanges, CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision, DuplicateRevisions, GitFetch, GitPush, InsertRevision, MoveChanges, MoveHunk, MoveRef, MoveRevision, MoveRevisionAfter, MoveSource, MutationResult, RenameBranch, RepoStatus, StoreRef, TrackBranch, TreePath, UndoOperation, UntrackBranch
 };
 
 use super::Mutation;
@@ -177,6 +177,16 @@ impl Mutation for CreateRevision {
             }
             None => Ok(MutationResult::Unchanged),
         }
+    }
+}
+
+impl Mutation for MoveRevisionAfter {
+    fn execute(self: Box<Self>, ws: &mut WorkspaceSession) -> Result<crate::messages::MutationResult> {
+        process::Command::new("jj").current_dir(ws.workspace.workspace_root().as_os_str())
+            .args(["rebase", "--ignore-immutable", "-r", self.id.change.hex.as_str(), "-A", self.after_id.change.hex.as_str()])
+            .spawn()?.wait();
+        let mut tx = ws.start_transaction()?;
+        Ok(MutationResult::Unchanged)
     }
 }
 
@@ -364,9 +374,9 @@ impl Mutation for MoveRevision {
         let target = ws.resolve_single_change(&self.id)?;
         let parents = ws.resolve_multiple_changes(self.parent_ids)?;
 
-        if ws.check_immutable(vec![target.id().clone()])? {
-            precondition!("Revision {} is immutable", self.id.change.prefix);
-        }
+        // if ws.check_immutable(vec![target.id().clone()])? {
+        //     precondition!("Revision {} is immutable", self.id.change.prefix);
+        // }
 
         // rebase the target's children
         let rebased_children = ws.disinherit_children(&mut tx, &target)?;

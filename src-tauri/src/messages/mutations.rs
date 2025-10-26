@@ -66,6 +66,17 @@ pub struct CreateRevisionBetween {
     derive(TS),
     ts(export, export_to = "../src/messages/")
 )]
+pub struct MoveRevisionAfter {
+    pub id: RevId,
+    pub after_id: RevId
+}
+
+#[derive(Deserialize, Debug)]
+#[cfg_attr(
+    feature = "ts-rs",
+    derive(TS),
+    ts(export, export_to = "../src/messages/")
+)]
 pub struct InsertRevision {
     pub id: RevId,
     pub after_id: RevId,

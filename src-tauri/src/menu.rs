@@ -184,6 +184,20 @@ pub fn build_context(
             )?,
             &MenuItem::with_id(
                 app_handle,
+                "revision_cut",
+                "Cut",
+                true,
+                Some("cmdorctrl+x"),
+            )?,
+            &MenuItem::with_id(
+                app_handle,
+                "revision_paste_after",
+                "Paste After Current",
+                true,
+                Some("cmdorctrl+v"),
+            )?,
+            &MenuItem::with_id(
+                app_handle,
                 "revision_backout",
                 "Backout into working copy",
                 true,
@@ -300,7 +314,7 @@ pub fn handle_selection(menu: Menu<Wry>, selection: Option<RevHeader>) -> Result
         Some(rev) => {
             revision_submenu.enable("menu_revision_new", true)?;
             revision_submenu.enable(
-                "menu_revision_new_after_parent_0", 
+                "menu_revision_new_after_parent_0",
                 !rev.is_immutable && rev.parent_ids.len() == 1
             )?;
             revision_submenu.enable(
@@ -341,7 +355,7 @@ pub fn handle_context(window: Window, ctx: Operand) -> Result<()> {
 
             context_menu.enable("revision_new", true)?;
             context_menu.enable(
-                "revision_new_after_parent_0", 
+                "revision_new_after_parent_0",
                 !header.is_immutable && header.parent_ids.len() == 1
             )?;
             context_menu.enable(
@@ -478,6 +492,8 @@ pub fn handle_event(window: &Window, event: MenuEvent) -> Result<()> {
         "menu_revision_squash" => window.emit("gg://menu/revision", "squash")?,
         "menu_revision_restore" => window.emit("gg://menu/revision", "restore")?,
         "menu_revision_branch" => window.emit("gg://menu/revision", "branch")?,
+        "revision_cut" => window.emit("gg://menu/revision", "cut")?,
+        "revision_paste_after" => window.emit("gg://menu/revision", "paste_after")?,
         "revision_new" => window.emit("gg://context/revision", "new")?,
         "revision_new_after_parent_0" => window.emit("gg://context/revision", "new_after_parent_0")?,
         "revision_edit" => window.emit("gg://context/revision", "edit")?,
@@ -514,7 +530,7 @@ pub fn repo_open(window: &Window) {
     });
 }
 
-fn repo_reopen(window: &Window) {
+pub fn repo_reopen(window: &Window) {
     handler::fatal!(crate::try_open_repository(window, None).context("try_open_repository"));
 }
 

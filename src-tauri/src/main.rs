@@ -9,6 +9,7 @@ mod messages;
 mod windows;
 mod worker;
 
+use std::any::type_name_of_val;
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -19,7 +20,7 @@ use anyhow::{Context, Result, anyhow};
 use clap::Parser;
 use jj_lib::config::ConfigSource;
 use log::LevelFilter;
-use tauri::menu::Menu;
+use tauri::menu::{Menu, MenuEvent, MenuId};
 use tauri::{Emitter, Listener, State, Window, WindowEvent, Wry};
 use tauri::{Manager, ipc::InvokeError};
 use tauri_plugin_window_state::StateFlags;
@@ -34,6 +35,8 @@ use messages::{
 use worker::{Mutation, Session, SessionEvent, WorkerSession};
 
 use crate::callbacks::FrontendCallbacks;
+use crate::menu::{repo_reopen};
+use crate::messages::MoveRevisionAfter;
 
 #[derive(Parser, Debug)]
 #[command(version, author)]
@@ -147,6 +150,7 @@ fn main() -> Result<()> {
             checkout_revision,
             create_revision,
             create_revision_between,
+            move_revision_after,
             describe_revision,
             duplicate_revisions,
             insert_revision,
@@ -390,6 +394,17 @@ fn create_revision_between(
 }
 
 #[tauri::command(async)]
+fn move_revision_after(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: MoveRevisionAfter,
+) -> Result<MutationResult, InvokeError> {
+    let result = try_mutate(window, app_state, mutation);
+    return result;
+}
+
+
+#[tauri::command(async)]
 fn insert_revision(
     window: Window,
     app_state: State<AppState>,
@@ -597,6 +612,7 @@ fn try_mutate<T: Mutation + Send + Sync + 'static>(
 ) -> Result<MutationResult, InvokeError> {
     let session_tx: Sender<SessionEvent> = app_state.get_session(window.label());
     let (call_tx, call_rx) = channel();
+    let tp = type_name_of_val(&mutation);
 
     session_tx
         .send(SessionEvent::ExecuteMutation {
@@ -604,6 +620,11 @@ fn try_mutate<T: Mutation + Send + Sync + 'static>(
             mutation: Box::new(mutation),
         })
         .map_err(InvokeError::from_error)?;
+
+    if(tp.contains("MoveRevisionAfter")){
+        print!("reloading workspace");
+        repo_reopen(&window);
+    }
     call_rx.recv().map_err(InvokeError::from_error)
 }
 

@@ -12,7 +12,9 @@ import type { MoveChanges } from "../messages/MoveChanges";
 import type { CreateRef } from "../messages/CreateRef";
 import { getInput, mutate } from "../ipc";
 import type { StoreRef } from "../messages/StoreRef";
+import type { MoveRevision } from "../messages/MoveRevision"
 
+let static_cutted_item:any = null
 export default class RevisionMutator {
     #revision: RevHeader;
 
@@ -27,6 +29,12 @@ export default class RevisionMutator {
         }
 
         switch (event) {
+            case "cut":
+                this.onCut();
+                break;
+            case "paste_after":
+                this.onPasteAfter();
+                break;
             case "new":
                 this.onNew();
                 break;
@@ -65,6 +73,18 @@ export default class RevisionMutator {
                 break;
             default:
                 console.log(`unimplemented mutation '${event}'`, this);
+        }
+    }
+
+
+    onCut = () => {
+        static_cutted_item = this.#revision
+    }
+
+    onPasteAfter = async()=>{
+        if(static_cutted_item != null){
+           await mutate<MoveRevision>("move_revision_after", { id: static_cutted_item.id, after_id: this.#revision.id });
+
         }
     }
 
