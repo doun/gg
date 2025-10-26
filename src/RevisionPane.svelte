@@ -168,7 +168,15 @@
             bind:value={fullDescription}
             on:dragenter={dragOverWidget}
             on:dragover={dragOverWidget}
+            on:blur={()=>{
+                if(descriptionChanged){
+                    updateDescription();
+                }
+            }}
             on:keydown={(ev) => {
+                if(ev.key.toLowerCase() === 'escape'){
+                    fullDescription = currentDescription
+                }
                 if (descriptionChanged && ev.key === "Enter" && (ev.metaKey || ev.ctrlKey)) {
                     updateDescription();
                 }
