@@ -12,11 +12,12 @@ use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
 use anyhow::{Context, Result};
+use gg_lib::messages::mutations::MoveRevisionsAfter;
 use jj_lib::config::ConfigSource;
 use jj_lib::settings::UserSettings;
 use log::LevelFilter;
 use tauri::async_runtime;
-use tauri::ipc::InvokeError;
+use tauri::ipc::{Invoke, InvokeError};
 use tauri::menu::Menu;
 use tauri::webview::WebviewWindowBuilder;
 use tauri::{AppHandle, Emitter, EventTarget, Listener, Manager, State, Window, WindowEvent, Wry};
@@ -194,6 +195,7 @@ pub fn run_gui(options: super::RunOptions) -> Result<()> {
             duplicate_revisions,
             insert_revisions,
             move_revisions,
+            move_revisions_after,
             adopt_revision,
             move_changes,
             copy_changes,
@@ -1199,4 +1201,14 @@ fn query_recent_workspaces(
         }
         Err(_) => Ok(vec![]),
     }
+}
+
+#[tauri::command(async)]
+fn move_revisions_after(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: MoveRevisionsAfter,
+    options: MutationOptions,
+) -> Result<MutationResult, InvokeError> {
+    try_mutate(window, app_state, mutation, options)
 }

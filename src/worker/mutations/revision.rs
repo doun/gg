@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::{collections::{HashMap, HashSet}, process::{Command, Stdio}};
 
 use anyhow::{Context, Result, anyhow};
 use async_trait::async_trait;
@@ -22,7 +22,7 @@ use crate::{
     messages::mutations::{
         AbandonRevisions, AdoptRevision, BackoutRevisions, CheckoutRevision, CreateRevision,
         CreateRevisionBetween, DescribeRevision, DuplicateRevisions, InsertRevisions,
-        MoveRevisions, MutationOptions, MutationResult,
+        MoveRevisions, MutationOptions, MutationResult,MoveRevisionsAfter,
     },
     worker::{Mutation, gui_util::WorkspaceSession},
 };
@@ -635,6 +635,56 @@ impl Mutation for MoveRevisions {
             None => Ok(MutationResult::Unchanged),
         }
     }
+}
+
+#[async_trait::async_trait(?Send)]
+impl Mutation for MoveRevisionsAfter {
+    async fn execute(self: Box<Self>, ws: &mut WorkspaceSession,options: &MutationOptions,) -> Result<MutationResult> {
+        if let Some(ids_str) = self.ids_str {
+            let mut args = String::new();
+            args.push_str(" rebase --ignore-immutable ");
+            args.push_str(&ids_str.split(",").map(|s| format!(" -r {} ", s)).collect::<Vec<String>>().join(" "));
+            args.push_str(" --insert-after ");
+            args.push_str(self.after_id.change.hex.as_str());
+            let _ = run_cmd(ws.workspace.workspace_root(), "jj", args);
+        }
+        Ok(MutationResult::Unchanged)
+    }
+}
+
+pub fn run_cmd<'a>(cwd:&std::path::Path, cmd: &'a str, args:  String) -> Result<&'a str>
+{
+    println!("准备运行cmd:{},args:{}", cmd, args);
+    let mut command = Command::new(cmd);
+    command.current_dir(cwd);
+    args.split(" ").for_each(|a| -> (){
+        if a != "" {
+            command.arg(a);
+        }
+    });
+    let mut sub = command.stdout(Stdio::inherit()).stderr(Stdio::inherit())
+    .spawn().expect("启动出错");
+
+    let exit_status = sub.wait().expect("执行出错");
+    if exit_status.success(){
+        Ok("done")
+    }else{
+        Ok("error")
+    }
+    // .arg("/C") .arg(cmd)
+    // app.run();
+    // app.run_with_args(args_str.split(" "));
+    // CliRunner::init().about("asdf").run_with_args(Some(args));
+    // let _ = process::Command::new("jj")
+    //         .current_dir(cwd)
+    //         .args(args)
+    //         .spawn()?.wait();
+
+    // let _ = process::Command::new("jj")
+    //         .current_dir(cwd)
+    //         .args(["workspace", "update-stale"])
+    //         .spawn()?.wait();
+
 }
 
 #[cfg(all(test, not(feature = "ts-rs")))]

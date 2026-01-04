@@ -12,7 +12,9 @@ import type { MoveChanges } from "../messages/MoveChanges";
 import type { CreateRef } from "../messages/CreateRef";
 import { getInput, mutate } from "../ipc";
 import type { StoreRef } from "../messages/StoreRef";
+import type { MoveRevisionsAfter } from "../messages/MoveRevisionsAfter";
 
+let static_cutted_item: RevHeader[] = []
 export default class RevisionMutator {
     #revisions: RevHeader[];
     #ignoreImmutable: boolean;
@@ -63,6 +65,12 @@ export default class RevisionMutator {
                 break;
             case "bookmark":
                 this.onBookmark();
+                break;
+            case "cut":
+                this.onCut();
+                break;
+            case "paste_after":
+                this.onPasteAfter()
                 break;
             default:
                 console.log(`unimplemented mutation '${event}'`, this);
@@ -144,6 +152,21 @@ export default class RevisionMutator {
             paths: []
         }, { ignoreImmutable: this.#ignoreImmutable });
     };
+
+
+    onCut = () => {
+        if (!this.#singleton) return;
+        static_cutted_item.push(this.#singleton)
+    }
+
+    onPasteAfter = async () => {
+        if (!this.#singleton) return;
+        if (static_cutted_item != null && static_cutted_item.length > 0) {
+            await mutate<MoveRevisionsAfter>("move_revisions_after", { ids_str: static_cutted_item.map(it => it.id.commit.hex).join(","), after_id: this.#singleton.id })
+        }
+        static_cutted_item.splice(0, Infinity)
+        window.location.reload();
+    }
 
     onBookmark = async () => {
         if (!this.#singleton) return;

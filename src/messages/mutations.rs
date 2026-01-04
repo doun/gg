@@ -286,3 +286,10 @@ pub struct ExternalResolve {
     pub id: RevId,
     pub path: TreePath,
 }
+
+#[derive(Deserialize, Debug)]
+#[cfg_attr( feature = "ts-rs", derive(TS), ts(export, export_to = "app/messages/"))]
+pub struct MoveRevisionsAfter {
+    pub ids_str: Option<String>,
+    pub after_id: RevId
+}
