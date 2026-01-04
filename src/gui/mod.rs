@@ -40,7 +40,7 @@ use gg_lib::messages::{
         DescribeRevision, DuplicateRevisions, ExternalDiff, ExternalResolve, ForgetWorkspace,
         GitFetch, GitPush, InitRepository, InsertRevisions, MoveChanges, MoveHunk, MoveRef,
         MoveRevisions, MutationOptions, MutationResult, OpenWorkspace, RedoOperation,
-        RenameBookmark, RenameWorkspace, TrackBookmark, UndoOperation, UntrackBookmark,
+        RenameBookmark, RenameWorkspace, TrackBookmark, UndoOperation, UntrackBookmark, MoveRevisionsAfter, Resolve,
     },
 };
 use gg_lib::worker::{Mutation, Session, SessionEvent, WorkerSession};
@@ -360,6 +360,8 @@ pub fn run_gui(options: super::RunOptions) -> Result<()> {
             undo_operation,
             redo_operation,
             write_config_table,
+            move_revisions_after,
+            resolve_revision,
         ])
         .menu(move |handle| menu::build_main(handle, &recent_workspaces, &[]))
         .manage(AppState::new(
@@ -1047,6 +1049,26 @@ fn write_config_table(
         .map_err(InvokeError::from_error)?;
     Ok(())
 }
+
+#[tauri::command(async)]
+fn move_revisions_after(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: MoveRevisionsAfter,
+) -> Result<MutationResult, InvokeError> {
+    try_mutate(window, app_state, mutation)
+}
+
+
+#[tauri::command(async)]
+fn resolve_revision(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: Resolve,
+) -> Result<MutationResult, InvokeError> {
+    try_mutate(window, app_state, mutation)
+}
+
 
 pub fn try_create_window(app_handle: &AppHandle, workspace: Option<PathBuf>) -> Result<()> {
     log::debug!("try_create_window: {:?}", workspace);

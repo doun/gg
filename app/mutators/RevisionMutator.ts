@@ -12,6 +12,8 @@ import type { MoveChanges } from "../messages/MoveChanges";
 import type { CreateRef } from "../messages/CreateRef";
 import { getInput, mutate } from "../ipc";
 import type { StoreRef } from "../messages/StoreRef";
+import type { MoveRevisionsAfter } from "../messages/MoveRevisionsAfter"
+import type { Resolve } from "../messages/Resolve"
 
 export default class RevisionMutator {
     #revisions: RevHeader[];
@@ -161,4 +163,22 @@ export default class RevisionMutator {
             mutate<CreateRef>("create_ref", { ref, id: this.#singleton.id }, { ignoreImmutable: this.#ignoreImmutable })
         }
     }
+
+    onCut = () => {
+        static_cutted_item.push(this.#revision)
+    }
+
+    onPasteAfter = async () => {
+        if (static_cutted_item != null && static_cutted_item.length > 0) {
+            await mutate<MoveRevisionsAfter>("move_revisions_after", { ids_str: static_cutted_item.map(it => it.id.commit.hex).join(","), after_id: this.#revision.id })
+        }
+        static_cutted_item.splice(0, Infinity)
+        window.location.reload();
+    }
+
+    onResolve = async () => {
+        await mutate<Resolve>("resolve_revision", { id: this.#revision.id })
+        window.location.reload();
+    }
+
 }
