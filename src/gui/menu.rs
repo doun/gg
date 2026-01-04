@@ -198,6 +198,20 @@ pub fn build_context(
             &PredefinedMenuItem::separator(app_handle)?,
             &MenuItem::with_id(
                 app_handle,
+                "revision_cut",
+                "Cut",
+                true,
+                Some("cmdorctrl+x"),
+            )?,
+            &MenuItem::with_id(
+                app_handle,
+                "revision_paste_after",
+                "Paste(After current)",
+                true,
+                Some("cmdorctrl+v"),
+            )?,
+            &MenuItem::with_id(
+                app_handle,
                 "revision_edit",
                 "Edit as working copy",
                 true,

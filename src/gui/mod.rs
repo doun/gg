@@ -16,7 +16,7 @@ use jj_lib::config::ConfigSource;
 use jj_lib::settings::UserSettings;
 use log::LevelFilter;
 use tauri::async_runtime;
-use tauri::ipc::InvokeError;
+use tauri::ipc::{Invoke, InvokeError};
 use tauri::menu::Menu;
 use tauri::webview::WebviewWindowBuilder;
 use tauri::{AppHandle, Emitter, EventTarget, Listener, Manager, State, Window, WindowEvent, Wry};
