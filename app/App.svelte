@@ -329,7 +329,7 @@
 <style>
     #shell {
         width: 100vw;
-        height: 95vh;
+        height: calc(100vh - 50px);
 
         /* display: grid;
         grid-template-columns: 1fr 3px 1fr;
