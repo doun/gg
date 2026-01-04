@@ -28,7 +28,8 @@
     }
 
     .change {
-        color: var(--ctp-pink);
+        color: var(--ctp-mauve);
+        font-weight: bold;
     }
 
     .hidden {

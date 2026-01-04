@@ -19,7 +19,8 @@
     import type { RevChange } from "./messages/RevChange";
     import TimestampSpan from "./controls/TimestampSpan.svelte";
     import TimestampRangeSpan from "./controls/TimestampRangeSpan.svelte";
-
+    import type { ChangeId } from "./messages/ChangeId";
+    import type { CommitId } from "./messages/CommitId";
     export let revs: Extract<RevsResult, { type: "Detail" }>;
 
     const CONTEXT = 3;
@@ -159,14 +160,35 @@
             return null;
         }
     }
+
+    function writeIdToClipboard(id: ChangeId | CommitId, event: MouseEvent) {
+        navigator.clipboard.writeText(id.hex.substring(0, 8));
+    }
+
 </script>
 
 <Pane titlebar>
     <h2 slot="header" class="header">
         <span class="title">
             {#if singleton}
-                <IdSpan selectable id={newest.id.change} /> | <IdSpan selectable id={newest.id.commit} />
-                {#if newest.is_working_copy}
+                <ActionWidget
+                tip={`click to copy`}
+                onClick={(event) => {
+                    writeIdToClipboard(newest.id.change, event);
+                }}>
+                <Icon name="copy" />
+               <IdSpan selectable id={newest.id.change} />
+            </ActionWidget>
+            <ActionWidget
+                tip={`click to copy`}
+                onClick={(event) => {
+                    writeIdToClipboard(newest.id.commit, event);
+                }}>
+                <Icon name="copy" />
+                <IdSpan selectable id={newest.id.commit} />
+                </ActionWidget>
+
+            {#if newest.is_working_copy}
                     | Working copy
                 {/if}
             {:else}
@@ -336,6 +358,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     /* the header may be click-through, but selection needs a click target */
@@ -353,7 +378,7 @@
     }
 
     .body {
-        height: 100%;
+        height: 100% !important;
         overflow: hidden;
         display: flex;
         flex-direction: column;
