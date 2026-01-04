@@ -34,11 +34,7 @@ use tokio::io::AsyncReadExt;
 
 use crate::git_util::AuthContext;
 use crate::messages::{
-    AbandonRevisions, BackoutRevisions, CheckoutRevision, CopyChanges, CopyHunk, CreateRef,
-    CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision, DuplicateRevisions,
-    GitFetch, GitPush, GitRefspec, InsertRevision, MoveChanges, MoveHunk, MoveRef, MoveRevision,
-    MoveSource, MutationResult, RenameBranch, StoreRef, TrackBranch, TreePath, UndoOperation,
-    UntrackBranch,
+    AbandonRevisions, BackoutRevisions, CheckoutRevision, CopyChanges, CopyHunk, CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision, DuplicateRevisions, GitFetch, GitPush, GitRefspec, InsertRevision, MoveChanges, MoveHunk, MoveRef, MoveRevision, MoveRevisionsAfter, MoveSource, MutationResult, RenameBranch, Resolve, StoreRef, TrackBranch, TreePath, UndoOperation, UntrackBranch
 };
 
 use super::Mutation;
@@ -1603,6 +1599,33 @@ impl Mutation for UndoOperation {
     }
 }
 
+#[async_trait::async_trait(?Send)]
+impl Mutation for MoveRevisionsAfter {
+    async fn execute(self: Box<Self>, ws: &mut WorkspaceSession) -> Result<MutationResult> {
+        if let Some(ids_str) = self.ids_str {
+            let mut args = String::new();
+            args.push_str(" rebase --ignore-immutable ");
+            args.push_str(&ids_str.split(",").map(|s| format!(" -r {} ", s)).collect::<Vec<String>>().join(" "));
+            args.push_str(" --insert-after ");
+            args.push_str(self.after_id.change.hex.as_str());
+            let _ = run_cmd(ws.workspace.workspace_root(),"jj", args);
+        }
+        Ok(MutationResult::Unchanged)
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl Mutation for Resolve{
+  async fn execute(
+        self: Box<Self>,
+        ws: &mut WorkspaceSession,
+    ) -> Result<MutationResult> {
+        let _ = run_cmd(ws.workspace.workspace_root(),"jj", ["--ignore-immutable", "edit", &self.id.change.hex].join(" "));
+        let _ = run_cmd(ws.workspace.workspace_root(),"jj", "resolve".to_string());
+        Ok(MutationResult::Unchanged)
+    }
+}
+
 fn combine_messages(source: &Commit, destination: &Commit, abandon_source: bool) -> String {
     if abandon_source {
         if source.description().is_empty() {
@@ -1786,4 +1809,40 @@ fn update_tree_entry(
     );
     let new_tree = builder.write_tree()?;
     Ok(new_tree)
+}
+
+
+pub fn run_cmd<'a>(cwd:&std::path::Path, cmd: &'a str, args:  String) -> Result<&'a str>
+{
+    println!("准备运行cmd:{},args:{}", cmd, args);
+    let mut command = Command::new(cmd);
+    command.current_dir(cwd);
+    args.split(" ").for_each(|a| -> (){
+        if a != "" {
+            command.arg(a);
+        }
+    });
+    let mut sub = command.stdout(Stdio::inherit()).stderr(Stdio::inherit())
+    .spawn().expect("启动出错");
+
+    let exit_status = sub.wait().expect("执行出错");
+    if exit_status.success(){
+        Ok("done")
+    }else{
+        Ok("error")
+    }
+    // .arg("/C") .arg(cmd)
+    // app.run();
+    // app.run_with_args(args_str.split(" "));
+    // CliRunner::init().about("asdf").run_with_args(Some(args));
+    // let _ = process::Command::new("jj")
+    //         .current_dir(cwd)
+    //         .args(args)
+    //         .spawn()?.wait();
+
+    // let _ = process::Command::new("jj")
+    //         .current_dir(cwd)
+    //         .args(["workspace", "update-stale"])
+    //         .spawn()?.wait();
+
 }

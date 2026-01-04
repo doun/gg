@@ -144,6 +144,9 @@
             <ActionWidget tip="create a child" onClick={mutator.onNewChild}>
                 <Icon name="edit" /> New
             </ActionWidget>
+             <ActionWidget tip="resolve" onClick={mutator.onResolve}>
+                <Icon name="edit" /> Resolve
+            </ActionWidget>
         </div>
     </h2>
 

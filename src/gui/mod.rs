@@ -27,7 +27,7 @@ use crate::messages::{
     CopyHunk, CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision,
     DuplicateRevisions, GitFetch, GitPush, InitRepository, InsertRevision, MoveChanges, MoveHunk,
     MoveRef, MoveRevision, MoveSource, MutationResult, RenameBranch, TrackBranch, UndoOperation,
-    UntrackBranch,
+    UntrackBranch, MoveRevisionsAfter, Resolve,
 };
 use crate::worker::{Mutation, Session, SessionEvent, WorkerSession};
 use sink::TauriSink;
@@ -176,6 +176,8 @@ pub fn run_gui(options: super::RunOptions) -> Result<()> {
             git_push,
             git_fetch,
             undo_operation,
+            move_revisions_after,
+            resolve_revision,
         ])
         .menu(menu::build_main)
         .manage(AppState::new(options.settings))
@@ -625,6 +627,26 @@ fn undo_operation(
 ) -> Result<MutationResult, InvokeError> {
     try_mutate(window, app_state, UndoOperation)
 }
+
+#[tauri::command(async)]
+fn move_revisions_after(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: MoveRevisionsAfter,
+) -> Result<MutationResult, InvokeError> {
+    try_mutate(window, app_state, mutation)
+}
+
+
+#[tauri::command(async)]
+fn resolve_revision(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: Resolve,
+) -> Result<MutationResult, InvokeError> {
+    try_mutate(window, app_state, mutation)
+}
+
 
 pub fn try_create_window(app_handle: &AppHandle, workspace: Option<PathBuf>) -> Result<()> {
     log::debug!("try_create_window: {:?}", workspace);
