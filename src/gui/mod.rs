@@ -27,7 +27,7 @@ use crate::messages::{
     CopyHunk, CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision,
     DuplicateRevisions, GitFetch, GitPush, InitRepository, InsertRevision, MoveChanges, MoveHunk,
     MoveRef, MoveRevision, MoveSource, MutationResult, RenameBranch, TrackBranch, UndoOperation,
-    UntrackBranch, MoveRevisionsAfter, Resolve,
+    UntrackBranch, MoveRevisionsAfter, Resolve, AbandonSubRevisions,
 };
 use crate::worker::{Mutation, Session, SessionEvent, WorkerSession};
 use sink::TauriSink;
@@ -178,6 +178,7 @@ pub fn run_gui(options: super::RunOptions) -> Result<()> {
             undo_operation,
             move_revisions_after,
             resolve_revision,
+            abandon_sub_revisions,
         ])
         .menu(menu::build_main)
         .manage(AppState::new(options.settings))
@@ -633,6 +634,15 @@ fn move_revisions_after(
     window: Window,
     app_state: State<AppState>,
     mutation: MoveRevisionsAfter,
+) -> Result<MutationResult, InvokeError> {
+    try_mutate(window, app_state, mutation)
+}
+
+#[tauri::command(async)]
+fn abandon_sub_revisions(
+    window: Window,
+    app_state: State<AppState>,
+    mutation: AbandonSubRevisions,
 ) -> Result<MutationResult, InvokeError> {
     try_mutate(window, app_state, mutation)
 }

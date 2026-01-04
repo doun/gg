@@ -1,6 +1,7 @@
 import type { RevHeader } from "../messages/RevHeader";
 import type { RevId } from "../messages/RevId";
 import type { AbandonRevisions } from "../messages/AbandonRevisions";
+import type { AbandonSubRevisions } from "../messages/AbandonSubRevisions";
 import type { BackoutRevisions } from "../messages/BackoutRevisions";
 import type { CheckoutRevision } from "../messages/CheckoutRevision";
 import type { CopyChanges } from "../messages/CopyChanges";
@@ -49,6 +50,12 @@ export default class RevisionMutator {
             case "abandon":
                 if (!this.#revision.is_immutable) {
                     this.onAbandon();
+                }
+                break;
+            case "abandon_sub_revisions":
+                if (!this.#revision.is_immutable) {
+                    console.log("abandon sub items")
+                    this.onAbandonSub();
                 }
                 break;
             case "squash":
@@ -114,6 +121,12 @@ export default class RevisionMutator {
         mutate<AbandonRevisions>("abandon_revisions", {
             ids: [this.#revision.id.commit],
         });
+    };
+
+    onAbandonSub = () => {
+        mutate<AbandonSubRevisions>("abandon_sub_revisions", {
+            id: this.#revision.id,
+        })
     };
 
     onDescribe = (new_description: string, reset_author: boolean) => {

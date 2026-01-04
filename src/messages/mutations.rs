@@ -222,3 +222,10 @@ pub struct MoveRevisionsAfter {
 pub struct Resolve {
     pub id: RevId
 }
+
+
+#[derive(Deserialize, Debug)]
+#[cfg_attr( feature = "ts-rs", derive(TS), ts(export, export_to = "app/messages/"))]
+pub struct AbandonSubRevisions {
+    pub id: RevId
+}

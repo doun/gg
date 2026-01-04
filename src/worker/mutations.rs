@@ -34,7 +34,7 @@ use tokio::io::AsyncReadExt;
 
 use crate::git_util::AuthContext;
 use crate::messages::{
-    AbandonRevisions, BackoutRevisions, CheckoutRevision, CopyChanges, CopyHunk, CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision, DuplicateRevisions, GitFetch, GitPush, GitRefspec, InsertRevision, MoveChanges, MoveHunk, MoveRef, MoveRevision, MoveRevisionsAfter, MoveSource, MutationResult, RenameBranch, Resolve, StoreRef, TrackBranch, TreePath, UndoOperation, UntrackBranch
+    AbandonRevisions, AbandonSubRevisions, BackoutRevisions, CheckoutRevision, CopyChanges, CopyHunk, CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision, DuplicateRevisions, GitFetch, GitPush, GitRefspec, InsertRevision, MoveChanges, MoveHunk, MoveRef, MoveRevision, MoveRevisionsAfter, MoveSource, MutationResult, RenameBranch, Resolve, StoreRef, TrackBranch, TreePath, UndoOperation, UntrackBranch
 };
 
 use super::Mutation;
@@ -1622,6 +1622,17 @@ impl Mutation for Resolve{
     ) -> Result<MutationResult> {
         let _ = run_cmd(ws.workspace.workspace_root(),"jj", ["--ignore-immutable", "edit", &self.id.change.hex].join(" "));
         let _ = run_cmd(ws.workspace.workspace_root(),"jj", "resolve".to_string());
+        Ok(MutationResult::Unchanged)
+    }
+}
+
+#[async_trait::async_trait(?Send)]
+impl Mutation for AbandonSubRevisions{
+  async fn execute(
+        self: Box<Self>,
+        ws: &mut WorkspaceSession,
+    ) -> Result<MutationResult> {
+        let _ = run_cmd(ws.workspace.workspace_root(),"jj", format!("abandon {}::", &self.id.commit.hex));
         Ok(MutationResult::Unchanged)
     }
 }
