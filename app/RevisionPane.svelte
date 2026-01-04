@@ -130,8 +130,20 @@
     <h2 slot="header" class="header">
         <span class="title">
             {#if singleton}
-                <IdSpan ignoreSetting selectable id={newest.id.change} /> | <IdSpan ignoreSetting selectable id={newest.id.commit} />
-                {#if newest.is_working_copy}
+                <!-- <IdSpan ignoreSetting selectable id={newest.id.change} /> | <IdSpan ignoreSetting selectable id={newest.id.commit} /> -->
+                <ActionWidget
+                    tip="copy change ID to clipboard"
+                    onClick={() => navigator.clipboard.writeText(newest.id.change.hex)}>
+                    <Icon name="copy"/>
+                    <IdSpan selectable id={newest.id.change}/>
+                </ActionWidget>
+                <ActionWidget
+                    tip="copy commit ID to clipboard"
+                    onClick={() => navigator.clipboard.writeText(newest.id.commit.hex)}>
+                    <Icon name="copy"/>
+                    <IdSpan selectable id={newest.id.commit}/>
+                </ActionWidget>
+                 {#if newest.is_working_copy}
                     | Working copy
                 {/if}
             {:else}
@@ -301,6 +313,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .checkout-commands {
