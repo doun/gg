@@ -22,7 +22,7 @@ use log::LevelFilter;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 use tauri::async_runtime;
-use tauri::ipc::InvokeError;
+use tauri::ipc::{Invoke, InvokeError};
 use tauri::menu::Menu;
 use tauri::webview::WebviewWindowBuilder;
 use tauri::{

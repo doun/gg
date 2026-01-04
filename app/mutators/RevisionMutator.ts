@@ -16,6 +16,7 @@ import type { StoreRef } from "../messages/StoreRef";
 import type { MoveRevisionsAfter } from "../messages/MoveRevisionsAfter"
 import type { Resolve } from "../messages/Resolve"
 
+let static_cutted_item: RevHeader[] = []
 export default class RevisionMutator {
     #revisions: RevHeader[];
     #ignoreImmutable: boolean;
@@ -72,6 +73,12 @@ export default class RevisionMutator {
                 break;
             case "bookmark":
                 this.onBookmark();
+                break;
+            case "cut":
+                this.onCut();
+                break;
+            case "paste_after":
+                this.onPasteAfter()
                 break;
             default:
                 console.log(`unimplemented mutation '${event}'`, this);
