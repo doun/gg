@@ -15,6 +15,8 @@
     import AuthorSpan from "./controls/AuthorSpan.svelte";
     import ListWidget, { type List } from "./controls/ListWidget.svelte";
     import type { RevChange } from "./messages/RevChange";
+    import type { ChangeId } from "./messages/ChangeId";
+    import type { CommitId } from "./messages/CommitId";
 
     export let rev: Extract<RevResult, { type: "Detail" }>;
 
@@ -97,12 +99,33 @@
             return null;
         }
     }
+
+    function copyId(id: ChangeId | CommitId, event: MouseEvent) {
+        navigator.clipboard.writeText(id.prefix);
+    }
+
 </script>
 
 <Pane>
     <h2 slot="header" class="header">
         <span class="title">
-            <IdSpan selectable id={rev.header.id.change} /> | <IdSpan selectable id={rev.header.id.commit} />
+            <ActionWidget
+                tip={`click to copy`}
+                onClick={(event) => {
+                    copyId(rev.header.id.change, event);
+                }}>
+                <Icon name="copy" />
+               <IdSpan selectable id={rev.header.id.change} />
+            </ActionWidget>
+            <ActionWidget
+                tip={`click to copy`}
+                onClick={(event) => {
+                    copyId(rev.header.id.commit, event);
+                }}>
+                <Icon name="copy" />
+                <IdSpan selectable id={rev.header.id.commit} />
+            </ActionWidget>
+
             {#if rev.header.is_working_copy}
                 | Working copy
             {/if}
@@ -232,6 +255,9 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 6px;
     }
 
     .checkout-commands {
