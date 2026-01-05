@@ -392,7 +392,7 @@
 
     .description {
         resize: vertical;
-        min-height: 90px;
+        min-height: 120px;
         overflow: auto;
     }
 
