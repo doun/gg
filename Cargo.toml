@@ -127,4 +127,4 @@ objc2-app-kit = { version = "0.3", default-features = false, features = [
 ] }
 
 [profile.dev]
-debug = 0
+debug = true
