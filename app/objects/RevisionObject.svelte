@@ -132,7 +132,7 @@
     .layout {
         pointer-events: auto;
         /* layout summary components along a text line */
-        width: 100%;
+        width: 99%;
         height: 30px;
         display: grid;
         grid-template-areas: ". desc refs";

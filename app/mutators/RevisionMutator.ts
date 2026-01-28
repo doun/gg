@@ -60,7 +60,7 @@ export default class RevisionMutator {
                 this.onAbandon();
                 break;
             case "abandon_sub_revisions":
-                if (!this.#revision.is_immutable) {
+                if (!this.#revisions[0].is_immutable) {
                     console.log("abandon sub items")
                     this.onAbandonSub();
                 }
@@ -135,8 +135,9 @@ export default class RevisionMutator {
     };
 
     onAbandonSub = () => {
+        if(!this.#singleton) return;
         mutate<AbandonSubRevisions>("abandon_sub_revisions", {
-            id: this.#revision.id,
+            id: this.#singleton.id,
         })
     };
 
@@ -185,19 +186,22 @@ export default class RevisionMutator {
     }
 
     onCut = () => {
-        static_cutted_item.push(this.#revision)
+        if (!this.#singleton) return;
+        static_cutted_item.push(this.#singleton)
     }
 
     onPasteAfter = async () => {
+        if (!this.#singleton) return;
         if (static_cutted_item != null && static_cutted_item.length > 0) {
-            await mutate<MoveRevisionsAfter>("move_revisions_after", { ids_str: static_cutted_item.map(it => it.id.commit.hex).join(","), after_id: this.#revision.id })
+            await mutate<MoveRevisionsAfter>("move_revisions_after", { ids_str: static_cutted_item.map(it => it.id.commit.hex).join(","), after_id: this.#singleton.id })
         }
         static_cutted_item.splice(0, Infinity)
         window.location.reload();
     }
 
     onResolve = async () => {
-        await mutate<Resolve>("resolve_revision", { id: this.#revision.id })
+        if (!this.#singleton) return;
+        await mutate<Resolve>("resolve_revision", { id: this.#singleton.id })
         window.location.reload();
     }
 

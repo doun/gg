@@ -1,4 +1,4 @@
-use std::env;
+// use std::env;
 use std::process::{Command, Stdio};
 use std::collections::HashMap;
 use std::fmt::Display;
@@ -42,7 +42,7 @@ use crate::messages::{
     CreateRef, CreateRevision, CreateRevisionBetween, DeleteRef, DescribeRevision,
     DuplicateRevisions, GitFetch, GitPush, GitRefspec, InsertRevisions, MoveChanges, MoveHunk,
     MoveRef, MoveRevisions, MutationResult, RenameBookmark, StoreRef, TrackBookmark, TreePath,
-    UndoOperation, UntrackBookmark,MoveRevisionsAfter,
+    UndoOperation, UntrackBookmark,MoveRevisionsAfter,Resolve
 };
 
 use super::Mutation;
@@ -1937,7 +1937,7 @@ impl Mutation for UndoOperation {
 
 #[async_trait::async_trait(?Send)]
 impl Mutation for MoveRevisionsAfter {
-    async fn execute(self: Box<Self>, ws: &mut WorkspaceSession) -> Result<MutationResult> {
+    async fn execute(self: Box<Self>, ws: &mut WorkspaceSession,  _options: &crate::messages::MutationOptions,) -> Result<MutationResult> {
         if let Some(ids_str) = self.ids_str {
             let mut args = String::new();
             args.push_str(" rebase --ignore-immutable ");
@@ -1955,6 +1955,7 @@ impl Mutation for Resolve{
   async fn execute(
         self: Box<Self>,
         ws: &mut WorkspaceSession,
+        _options: &crate::messages::MutationOptions,
     ) -> Result<MutationResult> {
         let _ = run_cmd(ws.workspace.workspace_root(),"jj", ["--ignore-immutable", "edit", &self.id.change.hex].join(" "));
         let _ = run_cmd(ws.workspace.workspace_root(),"jj", "resolve".to_string());
@@ -1967,6 +1968,7 @@ impl Mutation for AbandonSubRevisions{
   async fn execute(
         self: Box<Self>,
         ws: &mut WorkspaceSession,
+         _options: &crate::messages::MutationOptions,
     ) -> Result<MutationResult> {
         let _ = run_cmd(ws.workspace.workspace_root(),"jj", format!("abandon {}::", &self.id.commit.hex));
         Ok(MutationResult::Unchanged)

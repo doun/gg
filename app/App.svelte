@@ -167,4 +167,13 @@
     .separator:focus-visible {
         background: var(--ctp-lavender);
     }
+
+    .separator:focus-visible {
+        outline: none;
+    }
+
+    .separator.dragging,
+    .separator:focus-visible {
+        background: var(--ctp-lavender);
+    }
 </style>

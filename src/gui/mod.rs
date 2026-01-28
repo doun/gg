@@ -22,7 +22,7 @@ use log::LevelFilter;
 #[cfg(target_os = "macos")]
 use tauri::TitleBarStyle;
 use tauri::async_runtime;
-use tauri::ipc::{Invoke, InvokeError};
+use tauri::ipc::{ InvokeError};
 use tauri::menu::Menu;
 use tauri::webview::WebviewWindowBuilder;
 use tauri::{
@@ -1057,8 +1057,9 @@ fn move_revisions_after(
     window: Window,
     app_state: State<AppState>,
     mutation: MoveRevisionsAfter,
+    options: MutationOptions,
 ) -> Result<MutationResult, InvokeError> {
-    try_mutate(window, app_state, mutation)
+    try_mutate(window, app_state, mutation, options)
 }
 
 #[tauri::command(async)]
@@ -1066,8 +1067,9 @@ fn abandon_sub_revisions(
     window: Window,
     app_state: State<AppState>,
     mutation: AbandonSubRevisions,
+    options: MutationOptions,
 ) -> Result<MutationResult, InvokeError> {
-    try_mutate(window, app_state, mutation)
+    try_mutate(window, app_state, mutation, options)
 }
 
 
@@ -1076,8 +1078,9 @@ fn resolve_revision(
     window: Window,
     app_state: State<AppState>,
     mutation: Resolve,
+    options: MutationOptions,
 ) -> Result<MutationResult, InvokeError> {
-    try_mutate(window, app_state, mutation)
+    try_mutate(window, app_state, mutation, options)
 }
 
 
