@@ -212,7 +212,7 @@
             <ActionWidget tip="create a child" onClick={mutator.onNewChild}>
                 <Icon name="edit" /> New
             </ActionWidget>
-             <ActionWidget tip="resolve" onClick={mutator.onResolve}>
+             <ActionWidget tip="resolve" onClick={mutator.onResolveRev}>
                 <Icon name="edit" /> Resolve
             </ActionWidget>
         </div>
@@ -240,7 +240,8 @@
                         updateDescription();
                     }
                 if(ev.key.toLowerCase() == "escape"){
-                    fullDescription = currentDescription;
+                    // fullDescription = currentDescription;
+                    editableDescription = baselineDescription;
                 }
                 }}></textarea>
         {/if}

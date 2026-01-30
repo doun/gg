@@ -42,6 +42,7 @@ use gg_lib::messages::{
         MoveRevisions, MutationOptions, MutationResult, OpenWorkspace, RedoOperation,
         RenameBookmark, RenameWorkspace, TrackBookmark, UndoOperation, UntrackBookmark, MoveRevisionsAfter, Resolve,
         AbandonSubRevisions,
+        MoveRevisionsAfter, AbandonSubRevisions,
     },
 };
 use gg_lib::worker::{Mutation, Session, SessionEvent, WorkerSession};
@@ -362,7 +363,7 @@ pub fn run_gui(options: super::RunOptions) -> Result<()> {
             redo_operation,
             write_config_table,
             move_revisions_after,
-            resolve_revision,
+            // resolve_revision,
             abandon_sub_revisions,
         ])
         .menu(move |handle| menu::build_main(handle, &recent_workspaces, &[]))
@@ -1073,15 +1074,15 @@ fn abandon_sub_revisions(
 }
 
 
-#[tauri::command(async)]
-fn resolve_revision(
-    window: Window,
-    app_state: State<AppState>,
-    mutation: Resolve,
-    options: MutationOptions,
-) -> Result<MutationResult, InvokeError> {
-    try_mutate(window, app_state, mutation, options)
-}
+// #[tauri::command(async)]
+// fn resolve_revision(
+//     window: Window,
+//     app_state: State<AppState>,
+//     mutation: Resolve,
+//     options: MutationOptions,
+// ) -> Result<MutationResult, InvokeError> {
+//     try_mutate(window, app_state, mutation, options)
+// }
 
 
 pub fn try_create_window(app_handle: &AppHandle, workspace: Option<PathBuf>) -> Result<()> {

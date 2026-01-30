@@ -15,7 +15,7 @@
     import SelectWidget from "./controls/SelectWidget.svelte";
     import ListWidget, { type List, type Selection } from "./controls/ListWidget.svelte";
     import { type EnhancedRow, default as GraphLog, type EnhancedLine } from "./GraphLog.svelte";
-    import { Splitpanes, Pane as SplitPane } from "svelte-splitpanes";
+    // import { Splitpanes, Pane as SplitPane } from "svelte-splitpanes";
 
     export let query_choices: Record<string, string>;
     export let latest_query: string;

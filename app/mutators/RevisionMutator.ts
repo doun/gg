@@ -14,7 +14,8 @@ import type { CreateRef } from "../messages/CreateRef";
 import { getInput, mutate } from "../ipc";
 import type { StoreRef } from "../messages/StoreRef";
 import type { MoveRevisionsAfter } from "../messages/MoveRevisionsAfter"
-import type { Resolve } from "../messages/Resolve"
+import type { ExternalResolve } from "../messages/ExternalResolve";
+// import type { Resolve } from "../messages/Resolve"
 
 let static_cutted_item: RevHeader[] = []
 export default class RevisionMutator {
@@ -80,15 +81,29 @@ export default class RevisionMutator {
             case "paste_after":
                 this.onPasteAfter()
                 break;
+            case "clear_selection":
+                this.onClearSelection()
+                break;
             default:
                 console.log(`unimplemented mutation '${event}'`, this);
         }
+    }
+    onClearSelection() {
+        static_cutted_item.splice(0, Infinity)
     }
 
     onNewChild = () => {
         mutate<CreateRevision>("create_revision", {
             set: this.#set
         }, { ignoreImmutable: this.#ignoreImmutable });
+    };
+
+    onResolveRev = () => {
+        if (!this.#singleton) return;
+        mutate<ExternalResolve>("external_resolve", {
+            id: this.#singleton.id,
+            path: { relative_path: ".", repo_path: "[ALL]" },
+        }, { ignoreImmutable: true });
     };
 
     onNewParent = () => {
@@ -135,10 +150,13 @@ export default class RevisionMutator {
     };
 
     onAbandonSub = () => {
-        if(!this.#singleton) return;
+        if (!this.#singleton) {
+            console.log("无法调用abandon,当前项目数量:" + this.#revisions.length)
+            return;
+        }
         mutate<AbandonSubRevisions>("abandon_sub_revisions", {
             id: this.#singleton.id,
-        })
+        }, { ignoreImmutable: this.#ignoreImmutable })
     };
 
     onDescribe = (new_description: string, reset_author: boolean) => {
@@ -186,8 +204,9 @@ export default class RevisionMutator {
     }
 
     onCut = () => {
-        if (!this.#singleton) return;
-        static_cutted_item.push(this.#singleton)
+        // if (!this.#singleton) return;
+        // static_cutted_item.push(this.#singleton)
+        this.#revisions.forEach(it => static_cutted_item.push(it))
     }
 
     onPasteAfter = async () => {
@@ -199,10 +218,10 @@ export default class RevisionMutator {
         window.location.reload();
     }
 
-    onResolve = async () => {
-        if (!this.#singleton) return;
-        await mutate<Resolve>("resolve_revision", { id: this.#singleton.id })
-        window.location.reload();
-    }
+    // onResolve = async () => {
+    //     if (!this.#singleton) return;
+    //     await mutate<Resolve>("resolve_revision", { id: this.#singleton.id })
+    //     window.location.reload();
+    // }
 
 }

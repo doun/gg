@@ -19,8 +19,8 @@ permissions = [
 ]
 
 [build]
-beforeBuildCommand = "npm run build"
-beforeDevCommand = "npx vite"
+beforeBuildCommand = "yarn build"
+beforeDevCommand = "yarn vite"
 devUrl = "http://localhost:6973"
 frontendDist = "dist"
 features = ["app"]

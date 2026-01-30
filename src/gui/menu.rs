@@ -273,6 +273,13 @@ pub fn build_context(
             )?,
             &MenuItem::with_id(
                 app_handle,
+                "revision_clear_selection",
+                "Clear Selection",
+                true,
+                Some("cmdorctrl+shift+x"),
+            )?,
+            &MenuItem::with_id(
+                app_handle,
                 "revision_edit",
                 "Edit as working copy",
                 true,
@@ -752,6 +759,7 @@ pub fn handle_event(window: &Window, event: MenuEvent) -> Result<()> {
         "revision_new_parent" => window.emit_to(target, "gg://context/revision", "new_parent")?,
         "revision_cut" => window.emit("gg://context/revision", "cut")?,
         "revision_paste_after" => window.emit("gg://context/revision", "paste_after")?,
+        "revision_clear_selection" => window.emit("gg://context/revision", "clear_selection")?,
         "revision_edit" => window.emit_to(target, "gg://context/revision", "edit")?,
         "revision_revert" => window.emit_to(target, "gg://context/revision", "revert")?,
         "revision_duplicate" => window.emit_to(target, "gg://context/revision", "duplicate")?,

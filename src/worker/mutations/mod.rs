@@ -2,7 +2,8 @@ mod change;
 mod r#ref;
 mod revision;
 
-use std::collections::HashMap;
+use std::process::Command;
+use std::{collections::HashMap, process::Stdio};
 use std::sync::Arc;
 
 use anyhow::{Context, Error, Result, anyhow};
@@ -140,6 +141,41 @@ impl Mutation for ExternalDiff {
     }
 }
 
+pub fn run_cmd<'a>(cwd:&std::path::Path, cmd: &'a str, args:  String) -> Result<&'a str>
+{
+    println!("准备运行cmd:{},args:{}", cmd, args);
+    let mut command = Command::new(cmd);
+    command.current_dir(cwd);
+    args.split(" ").for_each(|a| -> (){
+        if a != "" {
+            command.arg(a);
+        }
+    });
+    let mut sub = command.stdout(Stdio::inherit()).stderr(Stdio::inherit())
+    .spawn().expect("启动出错");
+
+    let exit_status = sub.wait().expect("执行出错");
+    if exit_status.success(){
+        Ok("done")
+    }else{
+        Ok("error")
+    }
+    // .arg("/C") .arg(cmd)
+    // app.run();
+    // app.run_with_args(args_str.split(" "));
+    // CliRunner::init().about("asdf").run_with_args(Some(args));
+    // let _ = process::Command::new("jj")
+    //         .current_dir(cwd)
+    //         .args(args)
+    //         .spawn()?.wait();
+
+    // let _ = process::Command::new("jj")
+    //         .current_dir(cwd)
+    //         .args(["workspace", "update-stale"])
+    //         .spawn()?.wait();
+
+}
+
 #[async_trait(?Send)]
 impl Mutation for ExternalResolve {
     async fn execute(
@@ -149,8 +185,13 @@ impl Mutation for ExternalResolve {
     ) -> Result<MutationResult> {
         let commit = ws.resolve_change_id(&self.id)?;
 
-        if ws.check_immutable(vec![commit.id().clone()])? {
-            precondition!("Revision is immutable");
+        // if ws.check_immutable(vec![commit.id().clone()])? {
+        //     precondition!("Revision is immutable");
+        // }
+
+        if self.path.repo_path == "[ALL]" {
+            let _ = run_cmd(ws.workspace.workspace_root(), "jj", " resolve --ignore-immutable".into());
+            return Ok(MutationResult::Unchanged)
         }
 
         let tree = commit.tree();
