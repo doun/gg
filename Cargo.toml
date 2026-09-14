@@ -50,7 +50,7 @@ tower = "0.5.2"
 zip = "6.0"
 
 [dependencies]
-tauri = { version = "2.0.0", features = ["config-toml"] }
+tauri = { version = "2.11.5", features = ["config-toml"] }
 tauri-codegen = "2.0.0"
 tauri-macros = "2.0.0"
 tauri-plugin = "2.0.0"
